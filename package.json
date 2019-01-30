@@ -8,7 +8,8 @@
 	},
 	"activationEvents": [
 		"onCommand:extension.uploadFile",
-		"onCommand:extension.downloadFile"
+		"onCommand:extension.downloadFile",
+		"onCommand:extension.editConfig"
 	],
 	"main": "./extension.js",
 	"contributes": {
