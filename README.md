@@ -1,2 +1,2 @@
-# ftp-guru
+# sftp-guru
 a vs code extension to sync your project
