@@ -1,0 +1,53 @@
+{
+	"name": "sftp-guru",
+	"displayName": "sftp-guru",
+	"description": "a simple ftp/sftp guru for your project",
+	"version": "0.1.0",
+	"engines": {
+		"vscode": "^1.30.0"
+	},
+	"activationEvents": [
+		"onCommand:extension.uploadFile",
+		"onCommand:extension.downloadFile"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.uploadFile",
+				"title": "sftp-guru: upload file"
+			},
+			{
+				"command": "extension.downloadFile",
+				"title": "sftp-guru: download file"
+			}
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"when": "!explorerResourceIsFolder",
+					"command": "extension.downloadFile"
+				},
+				{
+					"when": "!explorerResourceIsFolder",
+					"command": "extension.uploadFile"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "node ./node_modules/vscode/bin/test"
+	},
+	"dependencies": {
+		"basic-ftp": "3.1.1",
+		"upath": "1.1.0"
+	},
+	"devDependencies": {
+		"typescript": "^3.1.4",
+		"vscode": "^1.1.25",
+		"eslint": "^4.11.0",
+		"@types/node": "^8.10.25",
+		"@types/mocha": "^2.2.42"
+	}
+}
