@@ -20,6 +20,10 @@
 			{
 				"command": "extension.downloadFile",
 				"title": "sftp-guru: download file"
+			},
+			{
+				"command": "extension.editConfig",
+				"title": "sftp-guru: edit configuration"
 			}
 		],
 		"menus": {

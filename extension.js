@@ -71,7 +71,7 @@ function downloadFile(currentFile) {
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+function activate(context) {		
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -94,6 +94,15 @@ function activate(context) {
 	});
 
 	context.subscriptions.push(downloadCommand);
+
+	let editConfigCommand = vscode.commands.registerCommand("extension.editConfig", () => {
+		checkForConfig().catch(() => {
+			let configFile = `${vscode.workspace.rootPath}\\.guru\\sftp.json`;
+			vscode.workspace.openTextDocument(configFile);
+		});
+	});
+
+	context.subscriptions.push(editConfigCommand);
 
 	/*
 	// The command has been defined in the package.json file
@@ -153,8 +162,8 @@ function ftpConnect(config) {
 		}).then(() => {
 			resolve(client);
 			console.info(`ftp connected...`);
-		}).catch(() => {
-			console.error(`no access to client possible...`);
+		}).catch((err) => {
+			handleError(err);
 			client.close();
 			reject();
 		});
@@ -170,7 +179,6 @@ function checkForConfig() {
 	return new Promise((resolve, reject) => {
 		
 		let configFile = `${vscode.workspace.rootPath}\\.guru\\sftp.json`;
-		
 		fs.readFile(configFile, (err, data) => {
 
 			if(err) {
@@ -184,9 +192,7 @@ function checkForConfig() {
 					"password": ""
 				}));
 
-				vscode.workspace.openTextDocument(configFile);
-
-				reject();
+				reject(configFile);
 
 			} else {
 
