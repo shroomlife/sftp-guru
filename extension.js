@@ -84,7 +84,7 @@ function activate(context) {
 	let uploadCommand = vscode.commands.registerCommand("extension.uploadFile", (args) => {
 		let file = getInvokedFile(args);
 		uploadFile(file).then(() => {
-			vscode.window.showInformationMessage(`${file} has been uploaded.`);
+			msg(`${file} has been uploaded.`);
 		}).catch(handleError);
 	});
 
@@ -93,16 +93,15 @@ function activate(context) {
 	let downloadCommand = vscode.commands.registerCommand("extension.downloadFile", (args) => {
 		let file = getInvokedFile(args);
 		downloadFile(file).then(() => {
-			vscode.window.showInformationMessage(`${file} has been downloaded.`);
+			msg(`${file} has been downloaded.`);
 		}).catch(handleError);
 	});
 
 	context.subscriptions.push(downloadCommand);
 
 	let editConfigCommand = vscode.commands.registerCommand("extension.editConfig", () => {
-		checkForConfig().catch(() => {
-			let configFile = `${vscode.workspace.rootPath}\\.guru\\sftp.json`;
-			vscode.workspace.openTextDocument(configFile);
+		checkForConfig().catch((json) => {
+			vscode.workspace.openTextDocument(json.filePath);
 		});
 	});
 
@@ -130,7 +129,7 @@ function deactivate() {}
 function handleError(error) {
 	console.error(error);
 	vscode.window.showErrorMessage(String(error));
-	vscode.window.showInformationMessage(String(error));
+	msg(String(error));
 }
 
 function msg(value) {
@@ -196,12 +195,16 @@ function checkForConfig() {
 					"password": ""
 				}));
 
-				reject(configFile);
+				reject({
+					"filePath": configFile
+				});
 
 			} else {
 
 				let dataString = data.toString();
 				let dataJSON = JSON.parse(dataString);
+
+				dataJSON.filePath = configFile;
 
 				resolve(dataJSON);
 
