@@ -43,17 +43,21 @@ function downloadFile(currentFile) {
 
 		checkForConfig().then((config) => {
 
+			console.log(config);
 			ftpConnect(config).then((client) => {
 				
 				let currentFileStream = fs.createWriteStream(currentFile);
+				console.log(currentFile);
 
 				let currentFileUnix = upath.toUnix(currentFile);
 				let currentFileUnixRelative = currentFileUnix.replace(rootUnix, "");
 
 				client.download(currentFileStream, config.remote + currentFileUnixRelative).then(() => {
+					console.log("done!");
 					client.close();
 					resolve();
 				}).catch((err) => {
+					console.log("err!: ", err);
 					client.close();
 					reject(err);
 				});
@@ -71,7 +75,7 @@ function downloadFile(currentFile) {
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {		
+function activate(context) {
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
