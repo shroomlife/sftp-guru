@@ -6,9 +6,19 @@ const fs = require("fs");
 const upath = require("upath");
 
 let rootUnix = upath.toUnix(vscode.workspace.rootPath);
+let myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+let workspaceConfigFile = `${vscode.workspace.rootPath}\\.guru\\sftp.json`;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
+
+function getUnixRelative(currentFile) {
+
+	let currentFileUnix = upath.toUnix(currentFile);
+	let currentFileUnixRelative = currentFileUnix.replace(rootUnix, "");
+	return currentFileUnixRelative;
+
+}
 
 function uploadFile(currentFile) {
 
@@ -16,10 +26,9 @@ function uploadFile(currentFile) {
 
 		checkForConfig().then((config) => {
 			ftpConnect(config).then((client) => {
+
+				let currentFileUnixRelative = getUnixRelative(currentFile);
 				let currentFileStream = fs.createReadStream(currentFile);
-		
-				let currentFileUnix = upath.toUnix(currentFile);
-				let currentFileUnixRelative = currentFileUnix.replace(rootUnix, "");
 		
 				client.upload(currentFileStream, config.remote + currentFileUnixRelative).then(() => {
 					client.close();
@@ -28,10 +37,8 @@ function uploadFile(currentFile) {
 					client.close();
 					reject(err);
 				});
-			});
-		}).catch((err) => {
-			reject(err);
-		});
+			}).catch(reject);
+		}).catch(reject);
 
 	});
 
@@ -62,11 +69,9 @@ function downloadFile(currentFile) {
 					reject(err);
 				});
 				
-			});
+			}).catch(reject);
 
-		}).catch((err) => {
-			reject(err);
-		});
+		}).catch(reject);
 
 	});
 
@@ -83,18 +88,27 @@ function activate(context) {
 
 	let uploadCommand = vscode.commands.registerCommand("extension.uploadFile", (args) => {
 		let file = getInvokedFile(args);
+		updateStatusBarItem(file, "uploading ...");
 		uploadFile(file).then(() => {
-			msg(`${file} has been uploaded.`);
-		}).catch(handleError);
+			updateStatusBarItem(file, "uploaded.");
+		}).catch((err) => {
+			updateStatusBarItem(file, "error while uploading." + ("message" in err ? err.message : ""));
+			handleError(err);
+		});
 	});
 
 	context.subscriptions.push(uploadCommand);
 
 	let downloadCommand = vscode.commands.registerCommand("extension.downloadFile", (args) => {
 		let file = getInvokedFile(args);
+		updateStatusBarItem(file, "downloading ...");
 		downloadFile(file).then(() => {
+			updateStatusBarItem(file, "downloaded.");
 			msg(`${file} has been downloaded.`);
-		}).catch(handleError);
+		}).catch((err) => {
+			updateStatusBarItem(file, "error while downloading." + ("message" in err ? err.message : ""));
+			handleError(err);
+		});
 	});
 
 	context.subscriptions.push(downloadCommand);
@@ -106,6 +120,17 @@ function activate(context) {
 	});
 
 	context.subscriptions.push(editConfigCommand);
+
+	context.subscriptions.push(myStatusBarItem);
+	
+	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
+		updateStatusBarItem();
+	}));
+	context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(() => {
+		updateStatusBarItem();
+	}));
+
+	updateStatusBarItem();
 
 	/*
 	// The command has been defined in the package.json file
@@ -122,6 +147,45 @@ function activate(context) {
 	*/
 }
 exports.activate = activate;
+
+function configExists() {
+	return fs.existsSync(workspaceConfigFile);
+}
+
+function updateStatusBarItem(file = "", text = "ready") {
+
+	if(!configExists()) {
+		return;
+	}
+	
+	myStatusBarItem.show();
+	myStatusBarItem.command = "extension.uploadFile";
+	let currentFile = file;
+	if(!currentFile.length) {
+		currentFile = vscode.window.activeTextEditor.document.fileName;
+	}
+
+	let icon = "globe";
+	switch(text) {
+		case "uploading ...":
+			icon = "arrow-up";
+			break;
+		case "downloading ...":
+			icon = "arrow-down";
+			break;
+		case "uploaded.":
+		case "downloaded.":
+			icon = "check";
+			setTimeout(() => {
+				updateStatusBarItem();
+			}, 2000);
+			break;
+	}
+	
+	let currentFileRelative = getUnixRelative(currentFile);
+	myStatusBarItem.text = `$(${icon}) sftp-guru[${currentFileRelative}] ${text}`;
+
+}
 
 // this method is called when your extension is deactivated
 function deactivate() {}
@@ -165,11 +229,7 @@ function ftpConnect(config) {
 		}).then(() => {
 			resolve(client);
 			console.info(`ftp connected...`);
-		}).catch((err) => {
-			handleError(err);
-			client.close();
-			reject();
-		});
+		}).catch(reject);
 
 	});
 
@@ -181,14 +241,13 @@ function checkForConfig() {
 
 	return new Promise((resolve, reject) => {
 		
-		let configFile = `${vscode.workspace.rootPath}\\.guru\\sftp.json`;
-		fs.readFile(configFile, (err, data) => {
+		fs.readFile(workspaceConfigFile, (err, data) => {
 
 			if(err) {
 
 				handleError(err);
 				fs.mkdirSync(`${vscode.workspace.rootPath}\\.guru`);
-				fs.writeFileSync(configFile, JSON.stringify({
+				fs.writeFileSync(workspaceConfigFile, JSON.stringify({
 					"host": "localhost",
 					"port": 21,
 					"user": "",
@@ -196,7 +255,7 @@ function checkForConfig() {
 				}));
 
 				reject({
-					"filePath": configFile
+					"filePath": workspaceConfigFile
 				});
 
 			} else {
@@ -204,7 +263,7 @@ function checkForConfig() {
 				let dataString = data.toString();
 				let dataJSON = JSON.parse(dataString);
 
-				dataJSON.filePath = configFile;
+				dataJSON.filePath = workspaceConfigFile;
 
 				resolve(dataJSON);
 
