@@ -2,7 +2,7 @@
 	"name": "sftp-guru",
 	"displayName": "sftp-guru",
 	"description": "a simple ftp/sftp guru for your project",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"engines": {
 		"vscode": "^1.30.0"
 	},

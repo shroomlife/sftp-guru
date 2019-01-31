@@ -114,9 +114,12 @@ function activate(context) {
 	context.subscriptions.push(downloadCommand);
 
 	let editConfigCommand = vscode.commands.registerCommand("extension.editConfig", () => {
-		checkForConfig().catch((json) => {
-			vscode.workspace.openTextDocument(json.filePath);
-		});
+		let openConfigFileFunc = () => {
+			vscode.workspace.openTextDocument(workspaceConfigFile).then((onfullfilled) => {
+				vscode.window.showTextDocument(onfullfilled);
+			});
+		};
+		checkForConfig().then(openConfigFileFunc).catch(openConfigFileFunc);
 	});
 
 	context.subscriptions.push(editConfigCommand);
@@ -252,18 +255,14 @@ function checkForConfig() {
 					"port": 21,
 					"user": "",
 					"password": ""
-				}));
+				}, null, 4));
 
-				reject({
-					"filePath": workspaceConfigFile
-				});
+				reject(err);
 
 			} else {
 
 				let dataString = data.toString();
 				let dataJSON = JSON.parse(dataString);
-
-				dataJSON.filePath = workspaceConfigFile;
 
 				resolve(dataJSON);
 
