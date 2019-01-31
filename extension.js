@@ -104,7 +104,6 @@ function activate(context) {
 		updateStatusBarItem(file, "downloading ...");
 		downloadFile(file).then(() => {
 			updateStatusBarItem(file, "downloaded.");
-			msg(`${file} has been downloaded.`);
 		}).catch((err) => {
 			updateStatusBarItem(file, "error while downloading." + ("message" in err ? err.message : ""));
 			handleError(err);
@@ -179,9 +178,6 @@ function updateStatusBarItem(file = "", text = "ready") {
 		case "uploaded.":
 		case "downloaded.":
 			icon = "check";
-			setTimeout(() => {
-				updateStatusBarItem();
-			}, 2000);
 			break;
 	}
 	
